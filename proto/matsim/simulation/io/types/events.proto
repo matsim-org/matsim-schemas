@@ -1,0 +1,13 @@
+syntax = "proto3";
+import "matsim/simulation/io/types/general.proto";
+
+package matsim.simulation.io.types;
+
+option java_multiple_files = true;
+option java_package = "org.matsim.schemas.simulation.io.types";
+option java_outer_classname = "EventsProto";
+
+message GenericEvent {
+  string type = 1;
+  map<string, AttributeValue> attributes = 2;
+}

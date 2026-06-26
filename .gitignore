@@ -1,0 +1,29 @@
+# Java
+java/target/
+**/target/
+
+# Rust
+rust/target/
+Cargo.lock
+
+# Temporary generated files
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*.log
+generated/
+gen/
+
+# IDE metadata
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+
+# OS metadata
+.DS_Store
+Thumbs.db

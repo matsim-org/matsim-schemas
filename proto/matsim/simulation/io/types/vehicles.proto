@@ -1,0 +1,31 @@
+syntax = "proto3";
+import "matsim/simulation/io/types/general.proto";
+
+package matsim.simulation.io.types;
+
+option java_multiple_files = true;
+option java_package = "org.matsim.schemas.simulation.io.types";
+option java_outer_classname = "VehiclesProto";
+
+message VehiclesContainer {
+  repeated VehicleType vehicle_types = 1;
+  repeated Vehicle vehicles = 2;
+}
+
+message VehicleType {
+  uint64 id = 1;
+  double length = 2;
+  double width = 3;
+  double max_v = 4;
+  double pce = 5;
+  double fef = 6;
+  uint64 net_mode = 7;
+}
+
+message Vehicle {
+  uint64 id = 1;
+  uint64 type = 2;
+  double max_v = 3;
+  double pce = 4;
+  map<string, AttributeValue> attributes = 5;
+}
