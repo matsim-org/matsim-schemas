@@ -18,6 +18,26 @@ Other repositories may still use `proto/` directly for their own code
 generation when they need bindings for another language or a different build
 system.
 
+## Schema Compatibility
+
+Buf checks protect the protobuf compatibility surface in `proto/`. Run these
+commands before changing published schemas:
+
+```bash
+buf build
+buf lint
+buf breaking --against '.git#branch=main,subdir=proto'
+```
+
+For releases, compare against the last published tag:
+
+```bash
+buf breaking --against '.git#tag=<last-release-tag>,subdir=proto'
+```
+
+Buf is used only for schema validation and compatibility checks. Java code
+generation remains in Maven, and Rust code generation remains in `prost-build`.
+
 ## Java Consumers
 
 Once published, Java consumers should depend on:
@@ -39,35 +59,3 @@ This crate generates plain protobuf message types with `prost`. It does not use
 `tonic-build`, and it does not generate gRPC service clients or servers.
 
 Consumers should pin released versions instead of depending on `main`.
-
-## Downstream Rust Services With Tonic
-
-Rust services that use `tonic` should define their own service `.proto` files
-in their own repository. Those service files may import MATSim schema files for
-`protoc` include resolution, but they should map MATSim protobuf packages to
-this crate with `prost_build::Config::extern_path`. That avoids duplicate
-generated Rust types.
-
-Example downstream `build.rs`:
-
-```rust
-let mut config = prost_build::Config::new();
-
-config.extern_path(
-    ".matsim.simulation.io.types",
-    "::matsim_schemas::matsim::simulation::io::types",
-);
-
-tonic_build::configure()
-    .build_client(true)
-    .build_server(true)
-    .compile_protos_with_config(
-        config,
-        &["proto/my/service/v1/service.proto"],
-        &[
-            "proto",
-            "../matsim-schemas/proto",
-        ],
-    )
-    .unwrap();
-```

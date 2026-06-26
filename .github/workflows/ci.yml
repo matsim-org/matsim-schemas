@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  buf:
+    name: Buf schema checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Buf
+        uses: bufbuild/buf-action@v1
+        with:
+          setup_only: true
+
+      - name: Build protobuf image
+        run: buf build
+
+      - name: Lint protobuf schemas
+        run: buf lint
+
+      - name: Fetch main for breaking-change comparison
+        if: github.event_name == 'pull_request'
+        run: git fetch --no-tags origin main:refs/heads/main
+
+      - name: Check protobuf breaking changes
+        if: github.event_name == 'pull_request'
+        run: buf breaking --against '.git#branch=main,subdir=proto'
+
+  rust:
+    name: Rust bindings build
+    runs-on: ubuntu-latest
+    needs: buf
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust stable
+        run: rustup toolchain install stable --profile minimal
+
+      - name: Build Rust crate
+        working-directory: rust
+        run: cargo +stable build
+
+  java:
+    name: Java bindings build
+    runs-on: ubuntu-latest
+    needs: buf
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Build Java module
+        working-directory: java
+        run: mvn clean package
