@@ -38,6 +38,60 @@ buf breaking --against '.git#tag=<last-release-tag>,subdir=proto'
 Buf is used only for schema validation and compatibility checks. Java code
 generation remains in Maven, and Rust code generation remains in `prost-build`.
 
+### Compatible Schema Changes
+
+Prefer additive protobuf evolution. Adding new messages, enum values, or new
+fields with new field numbers is the normal compatibility path.
+
+Do not reuse field numbers or field names after removing a field. Reserve them
+instead:
+
+```proto
+message Example {
+  reserved 4;
+  reserved "old_field";
+}
+```
+
+Avoid changing the type, meaning, package, file path, or field number of an
+existing schema element. Buf checks these compatibility rules with `FILE`
+breaking-change detection because individual `.proto` file paths are part of
+the public import surface.
+
+### Intentional Breaking Changes
+
+When possible, introduce a parallel versioned schema instead of changing an
+existing wire contract. For example, add a new `v2` package/path while keeping
+the existing schemas available for consumers that still depend on them.
+
+If a breaking change is intentional and approved for a major release, maintainers
+may apply the `schema-breaking-approved` pull request label. That label skips
+only the `buf breaking` comparison in CI. `buf build`, `buf lint`, the Rust
+build, and the Java build must still pass.
+
+## Versioning
+
+Use one Git tag per released schema version:
+
+```text
+vX.Y.Z
+```
+
+Publish the Java artifact and Rust crate from the same tag with the same
+version number. Java development versions should use the next `-SNAPSHOT`
+version, while Rust should be set to the exact version that will be released
+before tagging.
+
+After the first stable release the version number is `<major>.<minor>.<patch>`:
+
+- `PATCH`: packaging, documentation, or build fixes without schema API changes.
+- `MINOR`: backward-compatible schema additions.
+- `MAJOR`: Buf-detected breaking changes or generated API breaks.
+
+The first stable compatibility promise starts at `v1.0.0`. Published `0.x`
+versions should still avoid unnecessary breaks because consumers are expected to
+pin released versions rather than depend on `main`.
+
 ## Java Consumers
 
 Once published, Java consumers should depend on:

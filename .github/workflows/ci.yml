@@ -32,11 +32,15 @@ jobs:
         run: buf lint
 
       - name: Fetch main for breaking-change comparison
-        if: github.event_name == 'pull_request'
+        if: >-
+          github.event_name == 'pull_request' &&
+          !contains(github.event.pull_request.labels.*.name, 'schema-breaking-approved')
         run: git fetch --no-tags origin main:refs/heads/main
 
       - name: Check protobuf breaking changes
-        if: github.event_name == 'pull_request'
+        if: >-
+          github.event_name == 'pull_request' &&
+          !contains(github.event.pull_request.labels.*.name, 'schema-breaking-approved')
         run: buf breaking --against '.git#branch=main,subdir=proto'
 
   rust:
