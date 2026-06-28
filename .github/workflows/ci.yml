@@ -56,7 +56,6 @@ jobs:
         run: rustup toolchain install stable --profile minimal
 
       - name: Build Rust crate
-        working-directory: rust
         run: cargo +stable build
 
   java:
