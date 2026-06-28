@@ -11,3 +11,8 @@ message GenericEvent {
   string type = 1;
   map<string, AttributeValue> attributes = 2;
 }
+
+message TimeStep {
+  uint64 time_ns = 1;
+  bytes data = 2;
+}

@@ -2,9 +2,20 @@
 name = "matsim-schemas"
 version = "0.1.0"
 edition = "2024"
+include = [
+    "Cargo.toml",
+    "build.rs",
+    "src/**/*.rs",
+    "proto/**/*.proto",
+]
+
+[features]
+default = []
+serde = ["dep:serde"]
 
 [dependencies]
 prost = "0.14.4"
+serde = { version = "1", features = ["derive"], optional = true }
 
 [build-dependencies]
 prost-build = "0.14.4"
