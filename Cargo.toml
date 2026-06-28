@@ -1,0 +1,32 @@
+[package]
+name = "matsim-schemas"
+version = "0.1.0"
+edition = "2024"
+build = "rust/build.rs"
+
+# Keep the Cargo package at the repository root so the canonical proto/ tree is
+# included in published crates without copying schemas into rust/.
+include = [
+    "Cargo.toml",
+    "README.md",
+    "rust/build.rs",
+    "rust/src/**/*.rs",
+    "proto/**/*.proto",
+]
+
+[lib]
+path = "rust/src/lib.rs"
+
+[features]
+default = []
+build = ["dep:prost-build"]
+serde = ["dep:serde"]
+
+[dependencies]
+prost = "0.14.4"
+prost-build = { version = "0.14.4", optional = true }
+serde = { version = "1", features = ["derive"], optional = true }
+
+[build-dependencies]
+prost-build = "0.14.4"
+protobuf-src = "2.1.1"

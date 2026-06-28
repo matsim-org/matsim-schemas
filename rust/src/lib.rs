@@ -1,3 +1,31 @@
+use std::path::PathBuf;
+
+pub const PROTO_PACKAGE: &str = ".matsim.simulation.io.types";
+pub const RUST_TYPES_PATH: &str = "::matsim_schemas::matsim::simulation::io::types";
+
+const PROTO_FILES: &[&str] = &[
+    "matsim/simulation/io/types/general.proto",
+    "matsim/simulation/io/types/events.proto",
+    "matsim/simulation/io/types/network.proto",
+    "matsim/simulation/io/types/population.proto",
+    "matsim/simulation/io/types/vehicles.proto",
+];
+
+pub fn proto_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("proto")
+}
+
+pub fn proto_files() -> Vec<PathBuf> {
+    let root = proto_dir();
+    PROTO_FILES.iter().map(|proto| root.join(proto)).collect()
+}
+
+#[cfg(feature = "build")]
+pub fn configure_extern_path(config: &mut prost_build::Config) -> &mut prost_build::Config {
+    config.extern_path(PROTO_PACKAGE, RUST_TYPES_PATH);
+    config
+}
+
 pub mod matsim {
     pub mod simulation {
         pub mod io {
