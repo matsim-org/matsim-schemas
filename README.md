@@ -126,38 +126,3 @@ matsim-schemas = { version = "...", features = ["build"] }
 prost-build = "..."
 tonic-prost-build = "..."
 ```
-
-```rust
-let mut config = prost_build::Config::new();
-matsim_schemas::configure_extern_path(&mut config);
-
-let include_paths = [
-    std::path::PathBuf::from("proto"),
-    matsim_schemas::proto_dir(),
-];
-
-tonic_prost_build::configure()
-    .compile_with_config(
-        config,
-        &["proto/my/service.proto"],
-        &include_paths,
-    )?;
-```
-
-The crate exposes:
-
-- `matsim_schemas::PROTO_PACKAGE`
-- `matsim_schemas::RUST_TYPES_PATH`
-- `matsim_schemas::proto_dir()`
-- `matsim_schemas::proto_files()`
-- `matsim_schemas::configure_extern_path(...)`, with the `build` feature
-
-The Rust crate also re-exports shorter modules for common imports:
-
-- `matsim_schemas::general::{AttributeValue, Coordinate}`
-- `matsim_schemas::events::{GenericEvent, TimeStep}`
-- `matsim_schemas::network::{Network, Node, Link}`
-- `matsim_schemas::population::{Header, Person, Plan, Activity, Leg}`
-- `matsim_schemas::vehicles::{VehiclesContainer, VehicleType, Vehicle}`
-
-Consumers should pin released versions instead of depending on `main`.
