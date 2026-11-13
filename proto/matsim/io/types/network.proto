@@ -1,10 +1,11 @@
 syntax = "proto3";
-import "matsim/simulation/io/types/general.proto";
 
-package matsim.simulation.io.types;
+package matsim.io.types;
+
+import "matsim/io/types/general.proto";
 
 option java_multiple_files = true;
-option java_package = "org.matsim.schemas.simulation.io.types";
+option java_package = "org.matsim.schemas.io.types";
 option java_outer_classname = "NetworkProto";
 
 // this could also include attributes
@@ -31,4 +32,5 @@ message Link {
   double permlanes = 7;
   repeated string modes = 8;
   uint32 partition = 9;
+  map<string, AttributeValue> attributes = 10;
 }

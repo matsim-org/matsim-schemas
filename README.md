@@ -7,7 +7,8 @@ generated language bindings.
 
 `proto/` contains the canonical Protocol Buffer definitions. It is also the
 public protobuf import root, so imports from other repositories should be
-resolved relative to `proto/`.
+resolved relative to `proto/`. All schemas share the protobuf package
+`matsim.io.types` and are imported as `matsim/io/types/<name>.proto`.
 
 Language-specific packages are generated from those schemas:
 
@@ -111,7 +112,9 @@ Consumers should pin released versions instead of depending on `main`.
 
 Once published, Rust consumers should depend on the `matsim-schemas` crate.
 This crate generates plain protobuf message types with `prost`. It does not use
-`tonic-build`, and it does not generate gRPC service clients or servers.
+`tonic-build`, and it does not generate gRPC service clients or servers. The
+build takes protoc from `protoc-bin-vendored`, so it needs neither a system
+protoc nor a C++ toolchain.
 
 For downstream protobuf or gRPC generation, add `matsim-schemas` as a build
 dependency with the `build` feature and map the MATSim protobuf package to the
