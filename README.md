@@ -94,11 +94,30 @@ The first stable compatibility promise starts at `v1.0.0`. Published `0.x`
 versions should still avoid unnecessary breaks because consumers are expected to
 pin released versions rather than depend on `main`.
 
+### Releasing
+
+1. Set `version` in `Cargo.toml` to the release version `X.Y.Z`; `java/pom.xml`
+   stays at `X.Y.Z-SNAPSHOT`. Merge this into `main`.
+2. Tag the commit on `main` as `vX.Y.Z` and push the tag.
+3. The `Release` workflow (`.github/workflows/release.yml`) checks both versions
+   against the tag and publishes `org.matsim:matsim-schemas-java:X.Y.Z` to the
+   MATSim Maven repository. It needs the repository secrets
+   `REPOMATSIM_USERNAME` and `REPOMATSIM_TOKEN`. A tag that already exists can be
+   published with `gh workflow run release.yml -f tag=vX.Y.Z`.
+4. Move `java/pom.xml` to the next `-SNAPSHOT` version.
+
 ## Java Consumers
 
-Once published, Java consumers should depend on:
+Java consumers depend on the artifact in the MATSim Maven repository:
 
 ```xml
+<repositories>
+  <repository>
+    <id>matsim</id>
+    <url>https://repo.matsim.org/repository/matsim</url>
+  </repository>
+</repositories>
+
 <dependency>
   <groupId>org.matsim</groupId>
   <artifactId>matsim-schemas-java</artifactId>
@@ -106,11 +125,21 @@ Once published, Java consumers should depend on:
 </dependency>
 ```
 
+The jar also contains the `.proto` files, so downstream protobuf code generation
+can import them (for example with the `protobuf-maven-plugin`) without
+generating these classes again.
+
 Consumers should pin released versions instead of depending on `main`.
 
 ## Rust Consumers
 
-Once published, Rust consumers should depend on the `matsim-schemas` crate.
+The crate is not on crates.io yet, so Rust consumers depend on a release tag via
+git (as matsim-rust does):
+
+```toml
+matsim-schemas = { git = "https://github.com/matsim-org/matsim-schemas", tag = "vX.Y.Z" }
+```
+
 This crate generates plain protobuf message types with `prost`. It does not use
 `tonic-build`, and it does not generate gRPC service clients or servers. The
 build takes protoc from `protoc-bin-vendored`, so it needs neither a system
@@ -122,10 +151,10 @@ Rust types exported by `matsim-schemas`:
 
 ```toml
 [dependencies]
-matsim-schemas = "..."
+matsim-schemas = { git = "...", tag = "..." }
 
 [build-dependencies]
-matsim-schemas = { version = "...", features = ["build"] }
+matsim-schemas = { git = "...", tag = "...", features = ["build"] }
 prost-build = "..."
 tonic-prost-build = "..."
 ```
