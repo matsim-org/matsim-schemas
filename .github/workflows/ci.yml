@@ -2,6 +2,8 @@ name: CI
 
 on:
   pull_request:
+    # labeled/unlabeled: re-run when schema-breaking-approved is added or removed.
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches:
       - main
@@ -55,8 +57,11 @@ jobs:
       - name: Set up Rust stable
         run: rustup toolchain install stable --profile minimal
 
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
       - name: Build Rust crate
-        run: cargo +stable build
+        run: cargo +stable build --locked
 
   java:
     name: Java bindings build

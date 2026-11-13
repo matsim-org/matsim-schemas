@@ -1,9 +1,9 @@
 syntax = "proto3";
 
-package matsim.simulation.io.types;
+package matsim.io.types;
 
 option java_multiple_files = true;
-option java_package = "org.matsim.schemas.simulation.io.types";
+option java_package = "org.matsim.schemas.io.types";
 option java_outer_classname = "GeneralProto";
 
 message AttributeValue {
@@ -12,8 +12,14 @@ message AttributeValue {
     string string_value = 2;
     double double_value = 3;
     bool bool_value = 4;
+    StringMap string_map_value = 5;
     // to be expanded
   }
+}
+
+// Used by MATSim's PersonVehicles and PersonVehicleTypes attributes. Values are external ids.
+message StringMap {
+  map<string, string> entries = 1;
 }
 
 message Coordinate {
@@ -21,4 +27,3 @@ message Coordinate {
   double y = 2;
   double z = 3;
 }
-

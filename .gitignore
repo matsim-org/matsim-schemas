@@ -4,7 +4,6 @@ java/target/
 
 # Rust
 rust/target/
-Cargo.lock
 
 # Temporary generated files
 *.tmp

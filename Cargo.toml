@@ -1,6 +1,6 @@
 [package]
 name = "matsim-schemas"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 build = "rust/build.rs"
 
@@ -29,4 +29,5 @@ serde = { version = "1", features = ["derive"], optional = true }
 
 [build-dependencies]
 prost-build = "0.14.4"
-protobuf-src = "2.1.1"
+# provides a prebuilt protoc compiler, so no system protoc or protobuf C++ build is needed.
+protoc-bin-vendored = "3.3.0"
