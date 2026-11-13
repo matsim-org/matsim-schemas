@@ -1,0 +1,86 @@
+name: Release
+
+# Publishes the Java bindings of a release tag vX.Y.Z to the MATSim Maven repository
+# (repo.matsim.org) as org.matsim:matsim-schemas-java:X.Y.Z. Rust consumers use the tag via git.
+#
+# Runs when a release tag is pushed. To publish a tag that already exists (e.g. one created before
+# this workflow), start it manually: gh workflow run release.yml -f tag=vX.Y.Z
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing release tag to publish, e.g. v0.2.0'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish-java:
+    name: Publish Java bindings
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ env.TAG }}
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+          server-id: matsim-releases
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+
+      # The README's release rules: Cargo.toml has the exact release version, the pom the
+      # corresponding -SNAPSHOT version.
+      - name: Check versions
+        id: version
+        run: |
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag '$TAG' is not of the form vX.Y.Z"
+            exit 1
+          fi
+          version="${TAG#v}"
+          cargo_version=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -n 1)
+          pom_version=$(mvn -B -q -f java/pom.xml help:evaluate -Dexpression=project.version -DforceStdout)
+          if [[ "$cargo_version" != "$version" ]]; then
+            echo "::error::Cargo.toml has version $cargo_version, the tag says $version"
+            exit 1
+          fi
+          if [[ "$pom_version" != "$version-SNAPSHOT" ]]; then
+            echo "::error::java/pom.xml has version $pom_version, expected $version-SNAPSHOT"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Set release version
+        working-directory: java
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: mvn -B versions:set -DnewVersion="$VERSION" -DgenerateBackupPoms=false
+
+      # The target repository is given here rather than in the pom, so that tags without
+      # distributionManagement in their pom can be published too.
+      - name: Publish to repo.matsim.org
+        working-directory: java
+        env:
+          MAVEN_USERNAME: ${{ secrets.REPOMATSIM_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.REPOMATSIM_TOKEN }}
+        run: |
+          if [[ -z "$MAVEN_USERNAME" || -z "$MAVEN_PASSWORD" ]]; then
+            echo "::error::The repository secrets REPOMATSIM_USERNAME and REPOMATSIM_TOKEN are not set"
+            exit 1
+          fi
+          mvn -B deploy \
+            -DaltDeploymentRepository=matsim-releases::https://repo.matsim.org/repository/matsim-releases/
