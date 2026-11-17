@@ -63,6 +63,9 @@ jobs:
       - name: Build Rust crate
         run: cargo +stable build --locked
 
+      - name: Build Rust crate with all service features
+        run: cargo +stable build --locked --all-features
+
   java:
     name: Java bindings build
     runs-on: ubuntu-latest

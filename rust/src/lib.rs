@@ -34,6 +34,17 @@ pub mod matsim {
             include!(concat!(env!("OUT_DIR"), "/matsim.io.types.rs"));
         }
     }
+
+    #[cfg(feature = "routing")]
+    pub mod services {
+        pub mod routing {
+            /// Routing service API (feature `routing`): the messages `Request` and `Response`, the
+            /// gRPC client (`routing_service_client`) and server (`routing_service_server`).
+            pub mod v1 {
+                include!(concat!(env!("OUT_DIR"), "/matsim.services.routing.v1.rs"));
+            }
+        }
+    }
 }
 
 pub mod general {

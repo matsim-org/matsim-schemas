@@ -1,6 +1,6 @@
 [package]
 name = "matsim-schemas"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 build = "rust/build.rs"
 
@@ -21,13 +21,19 @@ path = "rust/src/lib.rs"
 default = []
 build = ["dep:prost-build"]
 serde = ["dep:serde"]
+# Routing service API (matsim.services.routing.v1): messages, gRPC client and server. Without it, the
+# API is not generated and the crate does not depend on tonic.
+routing = ["dep:tonic", "dep:tonic-prost", "dep:tonic-prost-build"]
 
 [dependencies]
 prost = "0.14.4"
 prost-build = { version = "0.14.4", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
+tonic = { version = "0.14", optional = true }
+tonic-prost = { version = "0.14", optional = true }
 
 [build-dependencies]
 prost-build = "0.14.4"
 # provides a prebuilt protoc compiler, so no system protoc or protobuf C++ build is needed.
 protoc-bin-vendored = "3.3.0"
+tonic-prost-build = { version = "0.14", optional = true }
