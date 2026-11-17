@@ -1,7 +1,8 @@
 name: Release
 
 # Publishes the Java bindings of a release tag vX.Y.Z to the MATSim Maven repository
-# (repo.matsim.org) as org.matsim:matsim-schemas-java:X.Y.Z. Rust consumers use the tag via git.
+# (repo.matsim.org) as org.matsim:matsim-schemas-java:X.Y.Z, then creates the GitHub release of the
+# tag with notes generated from the merged pull requests. Rust consumers use the tag via git.
 #
 # Runs when a release tag is pushed. To publish a tag that already exists (e.g. one created before
 # this workflow), start it manually: gh workflow run release.yml -f tag=vX.Y.Z
@@ -23,6 +24,9 @@ jobs:
   publish-java:
     name: Publish Java bindings
     runs-on: ubuntu-latest
+    permissions:
+      # to create the GitHub release
+      contents: write
     env:
       TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
 
@@ -84,3 +88,15 @@ jobs:
           fi
           mvn -B deploy \
             -DaltDeploymentRepository=matsim-releases::https://repo.matsim.org/repository/matsim-releases/
+
+      # Only after a successful deploy. A release that exists already (created by hand, or by an
+      # earlier run of this workflow) is kept as it is.
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "The GitHub release $TAG exists already"
+          else
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --title "$TAG" --generate-notes
+          fi

@@ -101,7 +101,9 @@ pin released versions rather than depend on `main`.
 2. Tag the commit on `main` as `vX.Y.Z` and push the tag.
 3. The `Release` workflow (`.github/workflows/release.yml`) checks both versions
    against the tag and publishes `org.matsim:matsim-schemas-java:X.Y.Z` to the
-   MATSim Maven repository. It needs the repository secrets
+   MATSim Maven repository. Then it creates the GitHub release of the tag, with
+   notes generated from the merged pull requests (edit them on GitHub if needed;
+   an existing release is kept). It needs the repository secrets
    `REPOMATSIM_USERNAME` and `REPOMATSIM_TOKEN`. A tag that already exists can be
    published with `gh workflow run release.yml -f tag=vX.Y.Z`.
 4. Move `java/pom.xml` to the next `-SNAPSHOT` version.
