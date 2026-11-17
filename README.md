@@ -106,6 +106,29 @@ pin released versions rather than depend on `main`.
    published with `gh workflow run release.yml -f tag=vX.Y.Z`.
 4. Move `java/pom.xml` to the next `-SNAPSHOT` version.
 
+## Service APIs
+
+Besides the shared message types (`matsim/io/types`), `proto/` contains the APIs
+of services that MATSim components call over gRPC, with the major version in the
+package and the path:
+
+- `matsim/services/routing/v1/routing.proto` (package
+  `matsim.services.routing.v1`): routing requests of a simulation to a router.
+
+This repository generates their messages and gRPC stubs, so clients and servers
+need no code generation of their own:
+
+- Java: in the jar, package `org.matsim.schemas.services.routing.v1`
+  (`Request`, `Response`, `RoutingServiceGrpc`). Add a gRPC transport yourself,
+  e.g. `io.grpc:grpc-netty-shaded`.
+- Rust: module `matsim_schemas::matsim::services::routing::v1` with the
+  messages, the gRPC client (`routing_service_client`) and server
+  (`routing_service_server`), only with the feature `routing`, which adds
+  `tonic`. Without it, the API is not generated.
+
+The `.proto` files are included as well, for other languages. Breaking changes go
+into a new version (`v2`) next to the old one.
+
 ## Java Consumers
 
 Java consumers depend on the artifact in the MATSim Maven repository:
@@ -140,14 +163,20 @@ git (as matsim-rust does):
 matsim-schemas = { git = "https://github.com/matsim-org/matsim-schemas", tag = "vX.Y.Z" }
 ```
 
-This crate generates plain protobuf message types with `prost`. It does not use
-`tonic-build`, and it does not generate gRPC service clients or servers. The
-build takes protoc from `protoc-bin-vendored`, so it needs neither a system
+This crate generates the message types with `prost`. The gRPC clients and
+servers of the service APIs are generated with `tonic` behind a feature per
+service (see Service APIs):
+
+```toml
+matsim-schemas = { git = "https://github.com/matsim-org/matsim-schemas", tag = "vX.Y.Z", features = ["routing"] }
+```
+
+The build takes protoc from `protoc-bin-vendored`, so it needs neither a system
 protoc nor a C++ toolchain.
 
-For downstream protobuf or gRPC generation, add `matsim-schemas` as a build
-dependency with the `build` feature and map the MATSim protobuf package to the
-Rust types exported by `matsim-schemas`:
+For your own protobuf or gRPC definitions that use the shared types, add
+`matsim-schemas` as a build dependency with the `build` feature and map the
+MATSim protobuf package to the Rust types exported by `matsim-schemas`:
 
 ```toml
 [dependencies]
@@ -157,4 +186,14 @@ matsim-schemas = { git = "...", tag = "..." }
 matsim-schemas = { git = "...", tag = "...", features = ["build"] }
 prost-build = "..."
 tonic-prost-build = "..."
+```
+
+In `build.rs`:
+
+```rust
+let mut config = prost_build::Config::new();
+matsim_schemas::configure_extern_path(&mut config);
+let includes = [std::path::PathBuf::from("proto"), matsim_schemas::proto_dir()];
+tonic_prost_build::configure()
+    .compile_with_config(config, &[std::path::PathBuf::from("proto/my/service.proto")], &includes)?;
 ```

@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+// Routing service: a client (e.g. the matsim-rust simulation) asks a router for the legs and activities of a trip.
+// matsim-schemas generates its messages and gRPC stubs: in the Java jar, and in the Rust crate with the feature
+// `routing`.
+package matsim.services.routing.v1;
+
+import "google/protobuf/empty.proto";
+import "matsim/io/types/general.proto";
+import "matsim/io/types/population.proto";
+
+option java_multiple_files = true;
+option java_package = "org.matsim.schemas.services.routing.v1";
+option java_outer_classname = "RoutingServiceProto";
+
+service RoutingService {
+  rpc GetRoute(Request) returns (Response);
+  // Asks the router to stop. Kept for now; the lifecycle of routers is meant to move to the process that starts
+  // them (SIGTERM), see the health service of the routers.
+  rpc Shutdown(google.protobuf.Empty) returns (google.protobuf.Empty);
+}
+
+message Request {
+  string person_id = 1;
+  string from_link_id = 2;
+  matsim.io.types.Coordinate from = 3;
+  matsim.io.types.Coordinate to = 5;
+  string to_link_id = 7;
+  string mode = 8;
+  // Simulation clock instant in nanoseconds since simulation start.
+  uint64 departure_time_ns = 9;
+  // Simulation clock instant in nanoseconds since simulation start.
+  uint64 now_ns = 10;
+  bytes request_id = 11;
+}
+
+message Response {
+  repeated matsim.io.types.Leg legs = 1;
+  repeated matsim.io.types.Activity activities = 2;
+  bytes request_id = 3;
+}
