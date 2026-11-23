@@ -115,17 +115,21 @@ of services that MATSim components call over gRPC, with the major version in the
 package and the path:
 
 - `matsim/services/routing/v1/routing.proto` (package
-  `matsim.services.routing.v1`): routing requests of a simulation to a router.
+  `matsim.services.routing.v1`): routing requests of a simulation to a router
+  (`RoutingService`), and the versions of the transit timetable that the
+  simulation sends to the router for these requests (`TimetableService`).
 
 This repository generates their messages and gRPC stubs, so clients and servers
 need no code generation of their own:
 
 - Java: in the jar, package `org.matsim.schemas.services.routing.v1`
-  (`Request`, `Response`, `RoutingServiceGrpc`). Add a gRPC transport yourself,
-  e.g. `io.grpc:grpc-netty-shaded`.
+  (`Request`, `Response`, `RoutingServiceGrpc`, `TimetableUpdate`,
+  `TimetableServiceGrpc`). Add a gRPC transport yourself, e.g.
+  `io.grpc:grpc-netty-shaded`.
 - Rust: module `matsim_schemas::matsim::services::routing::v1` with the
-  messages, the gRPC client (`routing_service_client`) and server
-  (`routing_service_server`), only with the feature `routing`, which adds
+  messages, the gRPC clients (`routing_service_client`,
+  `timetable_service_client`) and servers (`routing_service_server`,
+  `timetable_service_server`), only with the feature `routing`, which adds
   `tonic`. Without it, the API is not generated.
 
 The `.proto` files are included as well, for other languages. Breaking changes go

@@ -1,7 +1,9 @@
 syntax = "proto3";
 
 // Routing service: a client (e.g. the matsim-rust simulation) asks a router for the legs and activities of a trip.
-// matsim-schemas generates its messages and gRPC stubs: in the Java jar, and in the Rust crate with the feature
+// Timetable service: the same client sends the router the versions of the transit timetable (e.g. with delays) that
+// requests may route on.
+// matsim-schemas generates their messages and gRPC stubs: in the Java jar, and in the Rust crate with the feature
 // `routing`.
 package matsim.services.routing.v1;
 
@@ -20,6 +22,18 @@ service RoutingService {
   rpc Shutdown(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
+// Versions of the transit timetable during a run. The client opens one stream per router for the whole run and
+// sends, in this order:
+// 1. snapshot 0: one BaseRoute per transit route,
+// 2. per iteration an IterationStart, followed by one TimetableDelta for every snapshot 1, 2, ..., also if nothing
+//    changed, since requests for a snapshot wait until it has arrived.
+// The router ends the stream with an error status if the client breaks this contract (a gap in the snapshots, a
+// wrong iteration, an unknown departure, times that let departures of a route overtake each other, or a snapshot 0
+// whose ids or stop sequences differ from the router's schedule). The client then has to abort the run.
+service TimetableService {
+  rpc UpdateTimetable(stream TimetableUpdate) returns (google.protobuf.Empty);
+}
+
 message Request {
   string person_id = 1;
   string from_link_id = 2;
@@ -32,10 +46,78 @@ message Request {
   // Simulation clock instant in nanoseconds since simulation start.
   uint64 now_ns = 10;
   bytes request_id = 11;
+  // The timetable to route on. Without it, the router routes on its transit schedule. With it, the router waits
+  // until this version has arrived over the TimetableService. It fails the request if the version does not arrive
+  // within its deadline or was already released, and never routes on another version instead.
+  TimetableVersion timetable_version = 12;
 }
 
 message Response {
   repeated matsim.io.types.Leg legs = 1;
   repeated matsim.io.types.Activity activities = 2;
   bytes request_id = 3;
+  // The timetable version the route was computed on, the one the request named. Not set if the request named none.
+  TimetableVersion timetable_version = 4;
+}
+
+// Identifies a version of the timetable. Snapshot 0 is the base version of every iteration.
+message TimetableVersion {
+  uint32 iteration = 1;
+  uint32 snapshot_id = 2;
+}
+
+message TimetableUpdate {
+  oneof update {
+    BaseRoute base_route = 1;
+    IterationStart iteration_start = 2;
+    TimetableDelta delta = 3;
+  }
+}
+
+// One transit route of snapshot 0. The departures are numbered from 0 across all BaseRoute messages in the order
+// they are sent; TripUpdate.departure refers to this number.
+message BaseRoute {
+  string transit_line_id = 1;
+  string transit_route_id = 2;
+  // The stop facilities of the route in their order; the router checks them against its schedule.
+  repeated string stop_facility_ids = 3;
+  // All departures of the route, in an order in which no departure arrives at or leaves any stop earlier than the
+  // one before it.
+  repeated BaseDeparture departures = 4;
+}
+
+message BaseDeparture {
+  string departure_id = 1;
+  // One per stop of the route: simulation clock instants in nanoseconds since simulation start. Routers may require
+  // whole seconds.
+  repeated uint64 arrival_times_ns = 2;
+  repeated uint64 departure_times_ns = 3;
+}
+
+// Starts an iteration on snapshot 0. The first IterationStart also ends snapshot 0.
+message IterationStart {
+  uint32 iteration = 1;
+}
+
+message TimetableDelta {
+  // The iteration of the last IterationStart.
+  uint32 iteration = 1;
+  // The previous snapshot id plus 1; the first delta of an iteration has snapshot id 1.
+  uint32 snapshot_id = 2;
+  // No request of this iteration will name an older snapshot any more, so the router may release older versions.
+  // Snapshot 0 is kept as the base version of the next iterations.
+  uint32 oldest_needed_snapshot_id = 3;
+  // The departures whose times changed since the previous snapshot; may be empty.
+  repeated TripUpdate trips = 4;
+}
+
+// New times of one departure, from the stop at position from_stop of its route to the end of the route.
+message TripUpdate {
+  // The number of the departure in snapshot 0.
+  uint32 departure = 1;
+  // The position of the stop in the route, from 0, since a route may serve the same stop facility more than once.
+  uint32 from_stop = 2;
+  // One per stop from from_stop on, as in BaseDeparture.
+  repeated uint64 arrival_times_ns = 3;
+  repeated uint64 departure_times_ns = 4;
 }
