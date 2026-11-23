@@ -39,7 +39,9 @@ pub mod matsim {
     pub mod services {
         pub mod routing {
             /// Routing service API (feature `routing`): the messages `Request` and `Response`, the
-            /// gRPC client (`routing_service_client`) and server (`routing_service_server`).
+            /// gRPC client (`routing_service_client`) and server (`routing_service_server`). The
+            /// timetable versions that requests may route on are sent with `TimetableUpdate` over the
+            /// timetable service (`timetable_service_client`, `timetable_service_server`).
             pub mod v1 {
                 include!(concat!(env!("OUT_DIR"), "/matsim.services.routing.v1.rs"));
             }
